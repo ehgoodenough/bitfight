@@ -43,18 +43,22 @@ var Fighter = function(key, protofighter) {
     this.status = {
         "name": "idle"
     }
+    
+    this.time = 0
 }
 
 Fighter.prototype.update = function(tick) {
-    if(Input.isDown(this.inputs["move left"])) {
-        this.velocity.x -= this.acceleration * tick
-        if(this.velocity.x < -this.maxvelocity) {
-            this.velocity.x = -this.maxvelocity
-        } 
-    } if(Input.isDown(this.inputs["move right"])) {
-        this.velocity.x += this.acceleration * tick
-        if(this.velocity.x > +this.maxvelocity) {
-            this.velocity.x = +this.maxvelocity
+    if(this.status.name != "loser") {
+        if(Input.isDown(this.inputs["move left"])) {
+            this.velocity.x -= this.acceleration * tick
+            if(this.velocity.x < -this.maxvelocity) {
+                this.velocity.x = -this.maxvelocity
+            }
+        } if(Input.isDown(this.inputs["move right"])) {
+            this.velocity.x += this.acceleration * tick
+            if(this.velocity.x > +this.maxvelocity) {
+                this.velocity.x = +this.maxvelocity
+            }
         }
     }
     
@@ -70,13 +74,29 @@ Fighter.prototype.update = function(tick) {
     
     if(this.velocity.x < 0) {
         this.velocity.x *= Math.pow(this.deceleration, tick)
-        if(this.velocity.x > -this.velocity.minimum) {
+        if(this.velocity.x > -this.minvelocity) {
             this.velocity.x = 0
         }
     } else if(this.velocity.x > 0) {
         this.velocity.x *= Math.pow(this.deceleration, tick)
-        if(this.velocity.x < +this.velocity.minimum) {
+        if(this.velocity.x < +this.minvelocity) {
             this.velocity.x = 0
+        }
+    }
+    
+    if(this.status.name != "hurt"
+    && this.status.name != "loser"
+    && this.status.name != "winner"
+    && this.status.name != "punch"
+    && this.status.name != "kick") {
+        if(this.velocity.x != 0) {
+            this.status = {
+                "name": "walk"
+            }
+        } else {
+            this.status = {
+                "name": "idle"
+            }
         }
     }
     
@@ -104,31 +124,54 @@ Fighter.prototype.update = function(tick) {
         }
     }
     
-    for(var key in this.attacks) {
-        var attack = this.attacks[key]
-        if(!attack.time) {
-            attack.time = 0
-        } else {
-            attack.time -= tick
-        }
-        if(Input.isJustDown(this.inputs[key]) && attack.time <= 0) {
-            attack.time = attack.cooldown
-            var distance = Math.abs(opponent.position.x - this.position.x)
-            var mindistance = (opponent.width / 2) + (this.width / 2)
-            if(distance < mindistance + attack.distance) {
-                opponent.velocity.x = attack.force * this.direction.x
-                opponent.damage += attack.damage
-                opponent.status = {
-                    "name": "hurt",
-                    "time": 0.25
-                }
+    if(this.status.name != "loser"
+    && this.status.name != "winner") {
+        for(var key in this.attacks) {
+            var attack = this.attacks[key]
+            if(!attack.time) {
+                attack.time = 0
+            } else {
+                attack.time -= tick
             }
-            if(attack.speedup) {
-                this.maxvelocity *= attack.speedup
-                this.speeduptime = attack.speeduptime
+            if(Input.isJustDown(this.inputs[key]) && attack.time <= 0) {
+                attack.time = attack.cooldown
+                this.status = {
+                    "name": key,
+                    "time": attack.cooldown,
+                }
+                var distance = Math.abs(opponent.position.x - this.position.x)
+                var mindistance = (opponent.width / 2) + (this.width / 2)
+                if(distance < mindistance + attack.distance) {
+                    opponent.velocity.x = attack.force * this.direction.x
+                    opponent.damage += attack.damage
+                    if(opponent.damage >= opponent.maxdamage) {
+                        opponent.damage = opponent.maxdamage
+                        opponent.status = {
+                            "name": "loser"
+                        }
+                        opponent.position.y += 0.5
+                        this.status = {
+                            "name": "winner"
+                        }
+                        setTimeout(function() {
+                            window.location = window.location
+                        }, 5000)
+                    } else {
+                        opponent.status = {
+                            "name": "hurt",
+                            "time": 0.25
+                        }
+                    }
+                }
+                if(attack.speedup) {
+                    this.maxvelocity *= attack.speedup
+                    this.speeduptime = attack.speeduptime
+                }
             }
         }
     }
+    
+    this.time += tick
 }
 
 Fighter.prototype.getOtherFighter = function() {

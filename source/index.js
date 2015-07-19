@@ -9,10 +9,15 @@ window.HEIGHT = 9
 var Fighter = require("<scripts>/classes/Fighter")
 var Protofighters = require("<scripts>/data/Protofighters")
 
+function shuffle(o) {for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x); return o;}
+
+var protofighters = shuffle(Object.keys(Protofighters))
+var world = Math.floor(Math.random() * 2)
+
 window.Game = {
     "fighters": {
-        1: new Fighter(1, Protofighters["jones"]),
-        2: new Fighter(2, Protofighters["betty"]),
+        1: new Fighter(1, Protofighters[protofighters.pop()]),
+        2: new Fighter(2, Protofighters[protofighters.pop()]),
     }
 }
 
@@ -33,8 +38,9 @@ var GameView = React.createClass({
     render: function() {
         return (
             <FrameView aspect-ratio={WIDTH + "x" + HEIGHT}>
-                <WorldView data={{"name": "Floating Island"}}/>
-                <ForEachView data={this.state.game.fighters} view={FighterView}/>
+                <WorldView number={world}/>
+                <FighterView data={this.state.game.fighters[1]}/>
+                <FighterView data={this.state.game.fighters[2]}/>
                 <DamageView data={this.state.game.fighters[1]} number={1}/>
                 <DamageView data={this.state.game.fighters[2]} number={2}/>
             </FrameView>
