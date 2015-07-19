@@ -1,40 +1,41 @@
-var Fighter = function(protofighter) {
-    this.position = {}
-    this.position.x = protofighter.position.x || (WIDTH / 2)
-    this.position.y = protofighter.position.y || 4.05
+var Fighter = function(key, protofighter) {
+    this.key = key
     
-    this.key = protofighter.key || ""
-    this.inputs = protofighter.inputs || {}
-    this.images = protofighter.images || {}
+    this.images = protofighter.images
+    this.attacks = protofighter.attacks
     
-    this.velocity = {}
-    this.velocity.x = 0
-    this.velocity.y = 0
+    if(key == 1) {
+        this.inputs = {
+            "move left": "A",
+            "move right": "D",
+            "punch": "W",
+            "kick": "S",
+        }
+    } else if(key == 2) {
+        this.inputs = {
+            "move left": "<left>",
+            "move right": "<right>",
+            "punch": "<up>",
+            "kick": "<down>",
+        }
+    }
+    
+    this.position = {
+        "x": 16 * (key == 1 ? 0.25 : 0.75),
+        "y": 4.05
+    }
+        
+    this.direction = {"x": +1}
+    
+    this.velocity = {"x": 0}
     this.minvelocity = 0.001
-    this.maxvelocity = 0.075
+    this.maxvelocity = 0.1
     
     this.width = 1
     this.height = 2
+    
     this.acceleration = 5
     this.deceleration = 0.000005
-    
-    this.direction = {}
-    this.direction.x = +1
-    this.direction.y = 0
-    
-    this.punch = {}
-    this.punch.force = 1
-    this.punch.damage = 0.5
-    this.punch.distance = 0.5
-    this.punch.maxtime = 0.1
-    this.punch.time = 0
-    
-    this.kick = {}
-    this.kick.force = 10
-    this.kick.damage = 2
-    this.kick.distance = 0.1
-    this.kick.maxtime = 0.5
-    this.kick.time = 0
     
     this.damage = 0
     this.maxdamage = 10
@@ -45,21 +46,18 @@ var Fighter = function(protofighter) {
 }
 
 Fighter.prototype.update = function(tick) {
-    // movement input
     if(Input.isDown(this.inputs["move left"])) {
         this.velocity.x -= this.acceleration * tick
+        if(this.velocity.x < -this.maxvelocity) {
+            this.velocity.x = -this.maxvelocity
+        } 
     } if(Input.isDown(this.inputs["move right"])) {
         this.velocity.x += this.acceleration * tick
+        if(this.velocity.x > +this.maxvelocity) {
+            this.velocity.x = +this.maxvelocity
+        }
     }
     
-    // maximum velocity
-    if(this.velocity.x < -this.maxvelocity) {
-        this.velocity.x = -this.maxvelocity
-    } if(this.velocity.x > +this.maxvelocity) {
-        this.velocity.x = +this.maxvelocity
-    }
-    
-    // translation
     this.position.x += this.velocity.x
     
     if(this.position.x + this.velocity.x > 14) {
@@ -70,7 +68,6 @@ Fighter.prototype.update = function(tick) {
         this.velocity.x = 0
     }
     
-    // deceleration
     if(this.velocity.x < 0) {
         this.velocity.x *= Math.pow(this.deceleration, tick)
         if(this.velocity.x > -this.velocity.minimum) {
@@ -83,18 +80,15 @@ Fighter.prototype.update = function(tick) {
         }
     }
     
-    // fighter
     var opponent = this.getOtherFighter()
     
-    // direction
     if(this.position.x > opponent.position.x) {
         this.direction.x = -1
     } else if(this.position.x < opponent.position.x) {
         this.direction.x = +1
     }
     
-    // timers
-    if(this.status.time) {
+    if(!!this.status.time) {
         this.status.time -= tick
         if(this.status.time <= 0) {
             this.status = {
@@ -102,34 +96,38 @@ Fighter.prototype.update = function(tick) {
             }
         }
     }
-    this.kick.time -= tick
-    this.punch.time -= tick
     
-    // attack input
-    if(Input.isJustDown(this.inputs.punch) && this.punch.time <= 0) {
-        var distance = Math.abs(opponent.position.x - this.position.x)
-        var mindistance = (opponent.width / 2) + (this.width / 2)
-        if(distance < mindistance + this.punch.distance) {
-            opponent.velocity.x = this.punch.force * this.direction.x
-            opponent.damage += this.punch.damage
-            opponent.status = {
-                "name": "hurt",
-                "time": 0.25
+    if(!!this.speeduptime) {
+        this.speeduptime -= tick
+        if(this.speeduptime <= 0) {
+            this.maxvelocity = 0.1
+        }
+    }
+    
+    for(var key in this.attacks) {
+        var attack = this.attacks[key]
+        if(!attack.time) {
+            attack.time = 0
+        } else {
+            attack.time -= tick
+        }
+        if(Input.isJustDown(this.inputs[key]) && attack.time <= 0) {
+            attack.time = attack.cooldown
+            var distance = Math.abs(opponent.position.x - this.position.x)
+            var mindistance = (opponent.width / 2) + (this.width / 2)
+            if(distance < mindistance + attack.distance) {
+                opponent.velocity.x = attack.force * this.direction.x
+                opponent.damage += attack.damage
+                opponent.status = {
+                    "name": "hurt",
+                    "time": 0.25
+                }
+            }
+            if(attack.speedup) {
+                this.maxvelocity *= attack.speedup
+                this.speeduptime = attack.speeduptime
             }
         }
-        this.punch.time = this.punch.maxtime
-    } if(Input.isJustDown(this.inputs.kick) && this.kick.time <= 0) {
-        var distance = Math.abs(opponent.position.x - this.position.x)
-        var mindistance = (opponent.width / 2) + (this.width / 2)
-        if(distance < mindistance + this.kick.distance) {
-            opponent.velocity.x = this.kick.force * this.direction.x
-            opponent.damage += this.kick.damage
-            opponent.status = {
-                "name": "hurt",
-                "time": 0.25
-            }
-        }
-        this.kick.time = this.kick.maxtime
     }
 }
 

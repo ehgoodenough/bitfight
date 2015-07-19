@@ -6,42 +6,13 @@ window.Loop = require("tickly").loop
 window.WIDTH = 16
 window.HEIGHT = 9
 
-var Images = require("<scripts>/data/Images")
-
 var Fighter = require("<scripts>/classes/Fighter")
+var Protofighters = require("<scripts>/data/Protofighters")
 
 window.Game = {
     "fighters": {
-        "betty": new Fighter({
-            "key": "betty",
-            "position": {
-                "x": 16 * 0.25
-            },
-            "inputs": {
-                "move left": "A",
-                "move right": "D",
-                "punch": "W",
-                "kick": "S",
-            },
-            "images": {
-                "idle": Images["funky_betty.png"]
-            }
-        }),
-        "ollie": new Fighter({
-            "key": "ollie",
-            "position":  {
-                "x": 16 * 0.75
-            },
-            "inputs":  {
-                "move left": "<left>",
-                "move right": "<right>",
-                "punch": "<up>",
-                "kick": "<down>",
-            },
-            "images": {
-                "idle": Images["O.C.D.Ollie_still1.png"]
-            }
-        })
+        1: new Fighter(1, Protofighters["jones"]),
+        2: new Fighter(2, Protofighters["betty"]),
     }
 }
 
@@ -52,6 +23,7 @@ var GameStore = Phlux.createStore({
 var FrameView = require("<scripts>/views/FrameView")
 var ForEachView = require("<scripts>/views/ForEachView")
 var FighterView = require("<scripts>/views/FighterView")
+var DamageView = require("<scripts>/views/DamageView")
 var WorldView = require("<scripts>/views/WorldView")
 
 var GameView = React.createClass({
@@ -63,6 +35,8 @@ var GameView = React.createClass({
             <FrameView aspect-ratio={WIDTH + "x" + HEIGHT}>
                 <WorldView data={{"name": "Floating Island"}}/>
                 <ForEachView data={this.state.game.fighters} view={FighterView}/>
+                <DamageView data={this.state.game.fighters[1]} number={1}/>
+                <DamageView data={this.state.game.fighters[2]} number={2}/>
             </FrameView>
         )
     },
