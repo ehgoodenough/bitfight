@@ -16,6 +16,7 @@ var FighterView = React.createClass({
             "backgroundRepeat": "no-repeat",
             "backgroundPosition": "bottom",
             "backgroundSize": "contain",
+            "backgroundColor": this.props.data.status.name == "hurt" ? "red" : null,
         }
     }
 })

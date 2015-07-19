@@ -3,6 +3,9 @@ window.Phlux = require("phlux")
 window.Input = require("keyb")
 window.Loop = require("tickly").loop
 
+window.WIDTH = 16
+window.HEIGHT = 9
+
 var Images = require("<scripts>/data/Images")
 
 var Fighter = require("<scripts>/classes/Fighter")
@@ -12,15 +15,13 @@ window.Game = {
         "betty": new Fighter({
             "key": "betty",
             "position": {
-                "x": 16 * 0.25,
-                "y": 4.05
-            },
-            "direction": {
-                "x": +1
+                "x": 16 * 0.25
             },
             "inputs": {
                 "move left": "A",
                 "move right": "D",
+                "punch": "W",
+                "kick": "S",
             },
             "images": {
                 "idle": Images["funky_betty.png"]
@@ -29,15 +30,13 @@ window.Game = {
         "ollie": new Fighter({
             "key": "ollie",
             "position":  {
-                "x": 16 * 0.75,
-                "y": 4.05
-            },
-            "direction":  {
-                "x": -1
+                "x": 16 * 0.75
             },
             "inputs":  {
                 "move left": "<left>",
                 "move right": "<right>",
+                "punch": "<up>",
+                "kick": "<down>",
             },
             "images": {
                 "idle": Images["O.C.D.Ollie_still1.png"]
@@ -61,7 +60,7 @@ var GameView = React.createClass({
     ],
     render: function() {
         return (
-            <FrameView aspect-ratio="16x9">
+            <FrameView aspect-ratio={WIDTH + "x" + HEIGHT}>
                 <WorldView data={{"name": "Floating Island"}}/>
                 <ForEachView data={this.state.game.fighters} view={FighterView}/>
             </FrameView>
