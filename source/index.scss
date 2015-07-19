@@ -1,0 +1,14 @@
+@import "./styles/fonts.scss";
+@import "./styles/defaults.scss";
+@import "./styles/frame.scss";
+
+html
+{
+    font-family: goldfish;
+    background-color: #111;
+
+    #frame
+    {
+    	background-color: #EEE;
+    }
+}
